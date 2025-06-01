@@ -21,7 +21,7 @@ public class Product {
     private String author;
     private int review;
     private double price;
-    private String image;
+    private String images;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
 }
