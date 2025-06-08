@@ -3,6 +3,7 @@ package com.cybersoft.bookshop_product.service.imp;
 import com.cybersoft.bookshop_product.dto.ProductDTO;
 import com.cybersoft.bookshop_product.entity.Product;
 import com.cybersoft.bookshop_product.mapper.ProductMapper;
+import com.cybersoft.bookshop_product.payload.request.CreateProductRequest;
 import com.cybersoft.bookshop_product.repository.ProductRepository;
 import com.cybersoft.bookshop_product.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductDTO createProduct(ProductDTO productDTO) {
+    public ProductDTO createProduct(CreateProductRequest createProductRequest) {
         return null;
     }
 
