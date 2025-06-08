@@ -1,5 +1,6 @@
 package com.cybersoft.bookshop_product.service.imp;
 
+import com.cybersoft.bookshop_product.exception.FileStorageException;
 import com.cybersoft.bookshop_product.service.FileStorageServices;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -10,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Objects;
 
 @Service
 public class FileStorageServicesImp implements FileStorageServices {
@@ -25,10 +27,10 @@ public class FileStorageServicesImp implements FileStorageServices {
             if(!Files.exists(rootPath)) {
                 Files.createDirectory(rootPath);
             }
-            Files.copy(file.getInputStream(), rootPath.resolve(file.getOriginalFilename()), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(file.getInputStream(), rootPath.resolve(Objects.requireNonNull(file.getOriginalFilename())), StandardCopyOption.REPLACE_EXISTING);
         }
         catch (Exception e) {
-            throw new RuntimeException("Could not save file", e);
+            throw new FileStorageException("Could not save file"+ file.getOriginalFilename() + " because: " + e.getMessage());
         }
     }
 
