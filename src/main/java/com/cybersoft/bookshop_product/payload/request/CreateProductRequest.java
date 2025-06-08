@@ -11,5 +11,5 @@ public class CreateProductRequest {
     private String author;
     private int review;
     private double price;
-    private MultipartFile images;
+    private MultipartFile[] files;
 }
