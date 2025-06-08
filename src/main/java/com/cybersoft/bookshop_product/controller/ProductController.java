@@ -1,8 +1,10 @@
 package com.cybersoft.bookshop_product.controller;
 
 import com.cybersoft.bookshop_product.dto.ProductDTO;
+import com.cybersoft.bookshop_product.payload.response.BaseResponse;
 import com.cybersoft.bookshop_product.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +19,11 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<?> getListProduct() {
+        BaseResponse response = new BaseResponse();
         List<ProductDTO> listProduct = productService.getAllProducts();
-        return ResponseEntity.ok("");
+        response.setData(listProduct);
+        response.setMessage("Get list product success");
+        response.setCode(HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
     }
 }
