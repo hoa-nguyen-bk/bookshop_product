@@ -4,14 +4,21 @@ import com.cybersoft.bookshop_product.dto.ProductDTO;
 import com.cybersoft.bookshop_product.entity.Product;
 import com.cybersoft.bookshop_product.mapper.ProductMapper;
 import com.cybersoft.bookshop_product.payload.request.CreateProductRequest;
+import com.cybersoft.bookshop_product.payload.request.SearchProductRequest;
 import com.cybersoft.bookshop_product.repository.ProductRepository;
 import com.cybersoft.bookshop_product.service.FileStorageServices;
 import com.cybersoft.bookshop_product.service.ProductService;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +36,7 @@ public class ProductServiceImpl implements ProductService {
         this.productRepository = productRepository;
     }
 
+    @Transactional
     @Override
     public ProductDTO createProduct(CreateProductRequest productRequest) {
         StringBuilder images = new StringBuilder();
@@ -72,4 +80,29 @@ public class ProductServiceImpl implements ProductService {
                 .map(ProductMapper::mapToDTO).toList();
         // tự động ánh xạ mapToDTO luôn, cách viết ngắn gọn hơn ít spoiler code hơn,
     }
+
+    @Override
+    public Page<ProductDTO> searchProducts(SearchProductRequest request) {
+        Specification<Product> specification = filter(request.getTitle(), request.getAuthor());
+
+        return productRepository.findAll(specification, PageRequest.of(request.getNumPage(), request.getPageSize())).map(ProductMapper::mapToDTO);
+    }
+
+    public Specification<Product> filter(String title, String author) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            // WHERE (title = "ABC" AND author = "XYZ")
+
+            if (title != null && !title.isEmpty()) {
+                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), "%" + title.toLowerCase() + "%"));
+            }
+            if (author != null && !author.isEmpty()) {
+                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("author")), "%" + author.toLowerCase() + "%"));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+
 }

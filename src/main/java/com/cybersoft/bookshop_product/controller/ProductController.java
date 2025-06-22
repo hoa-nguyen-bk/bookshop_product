@@ -2,6 +2,7 @@ package com.cybersoft.bookshop_product.controller;
 
 import com.cybersoft.bookshop_product.dto.ProductDTO;
 import com.cybersoft.bookshop_product.payload.request.CreateProductRequest;
+import com.cybersoft.bookshop_product.payload.request.SearchProductRequest;
 import com.cybersoft.bookshop_product.payload.response.BaseResponse;
 import com.cybersoft.bookshop_product.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/prod/api/products")
 public class ProductController {
     @Autowired
     private ProductService productService;
@@ -24,6 +25,15 @@ public class ProductController {
         List<ProductDTO> listProduct = productService.getAllProducts();
         response.setData(listProduct);
         response.setMessage("Get list product success");
+        response.setCode(HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchProducts(SearchProductRequest request) {
+        BaseResponse response = new BaseResponse();
+        response.setData(productService.searchProducts(request).getContent());
+        response.setMessage("Search products success");
         response.setCode(HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }

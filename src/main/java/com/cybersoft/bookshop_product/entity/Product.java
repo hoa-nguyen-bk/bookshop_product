@@ -1,11 +1,8 @@
 package com.cybersoft.bookshop_product.entity;
 
-/*
- * BTVN: làm cách nào đó tái sử dụng entity cho các project khác nhau
- * */
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,4 +21,13 @@ public class Product {
     private String images;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
+
+    @PrePersist
+    public void onCreate() {
+        if (this.id == null) {
+            this.id = java.util.UUID.randomUUID().toString(); // Tạo ID ngẫu nhiên nếu chưa có
+        }
+        this.createdDate = LocalDateTime.now();
+        this.updatedDate = LocalDateTime.now();
+    }
 }
