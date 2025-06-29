@@ -26,3 +26,12 @@ jwt:
 
 file:
   path: /Users/hoanguyenlexuan/Documents/java08/microservice/uploads # đường dẫn lưu file upload, nhưng mình sẽ ko lưu vào source code mà mình lưu utrong ổ đĩa của mình lun
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://localhost:8086/eureka
