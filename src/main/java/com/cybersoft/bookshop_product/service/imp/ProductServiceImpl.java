@@ -10,17 +10,18 @@ import com.cybersoft.bookshop_product.service.FileStorageServices;
 import com.cybersoft.bookshop_product.service.ProductService;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
+import org.apache.commons.codec.binary.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 
 @Service
@@ -32,6 +33,7 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private final ProductRepository productRepository;
 
+
     public ProductServiceImpl(ProductRepository productRepository) {
         this.productRepository = productRepository;
     }
@@ -40,13 +42,23 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductDTO createProduct(CreateProductRequest productRequest) {
         StringBuilder images = new StringBuilder();
-        if(productRequest.getFiles()!= null && productRequest.getFiles().length > 0) {
-           for(MultipartFile file: productRequest.getFiles()) {
-               fileStorageServices.save(file);
-               images.append(file.getOriginalFilename()).append(",");
-           }
-           images.deleteCharAt(images.length() - 1);
+
+        String checksum;
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(productRequest.getFiles().getBytes());
+            checksum = Hex.encodeHexString(hash);
+        } catch (NoSuchAlgorithmException | IOException e) {
+            throw new RuntimeException("Error calculating file checksum", e);
         }
+
+        if(!checksum.equals(productRequest.getChecksum())) {
+            throw new RuntimeException("Checksum does not match");
+        }
+
+        fileStorageServices.save(productRequest.getFiles());
+        images.append(productRequest.getFiles().getOriginalFilename());
+
         Product product = new Product();
         product.setTitle(productRequest.getTitle());
         product.setAuthor(productRequest.getAuthor());
