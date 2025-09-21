@@ -7,6 +7,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,5 +40,18 @@ public class FileStorageServicesImp implements FileStorageServices {
     public Resource load(String fileName) {
         // Logic to load the file as a Resource
         return null; // Placeholder return statement
+    }
+
+    @Override
+    public void save(String fileName, byte[] data) {
+        // Logic to save the byte array as a file
+
+        File file = new File(root + "/" +fileName);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(data);
+        }
+         catch (Exception e) {
+            throw new FileStorageException("Could not save file " + fileName + " because: " + e.getMessage());
+        }
     }
 }

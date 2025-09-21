@@ -4,6 +4,7 @@ import com.cybersoft.bookshop_product.dto.ProductDTO;
 import com.cybersoft.bookshop_product.entity.Product;
 import com.cybersoft.bookshop_product.mapper.ProductMapper;
 import com.cybersoft.bookshop_product.payload.request.CreateProductRequest;
+import com.cybersoft.bookshop_product.payload.request.FileRequest;
 import com.cybersoft.bookshop_product.payload.request.SearchProductRequest;
 import com.cybersoft.bookshop_product.repository.ProductRepository;
 import com.cybersoft.bookshop_product.service.FileStorageServices;
@@ -16,11 +17,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 
@@ -38,38 +41,64 @@ public class ProductServiceImpl implements ProductService {
         this.productRepository = productRepository;
     }
 
-    @Transactional
+   @Transactional
     @Override
-    public ProductDTO createProduct(CreateProductRequest productRequest) {
-        StringBuilder images = new StringBuilder();
+   public ProductDTO createProduct(CreateProductRequest productRequest) {
+       StringBuilder images = new StringBuilder();
+       List<FileRequest> files = productRequest.getFiles();
 
-        String checksum;
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(productRequest.getFiles().getBytes());
-            checksum = Hex.encodeHexString(hash);
-        } catch (NoSuchAlgorithmException | IOException e) {
-            throw new RuntimeException("Error calculating file checksum", e);
-        }
+       if (files == null || files.isEmpty()) {
+           // tùy yêu cầu: có thể cho phép không có file hoặc ném exception
+       } else {
+           for (FileRequest fr : files) {
+               String fileName = fr.getFileName();
+               String base64 = fr.getFile();
+               String expectedChecksum = fr.getCheckSum();
 
-        if(!checksum.equals(productRequest.getChecksum())) {
-            throw new RuntimeException("Checksum does not match");
-        }
+               if (base64 == null) {
+                   throw new IllegalArgumentException("File content is null for file: " + fileName);
+               }
 
-        fileStorageServices.save(productRequest.getFiles());
-        images.append(productRequest.getFiles().getOriginalFilename());
+               byte[] fileBytes;
+               try {
+                   fileBytes = Base64.getDecoder().decode(base64);
+               } catch (IllegalArgumentException ex) {
+                   throw new RuntimeException("Invalid base64 for file: " + fileName, ex);
+               }
 
-        Product product = new Product();
-        product.setTitle(productRequest.getTitle());
-        product.setAuthor(productRequest.getAuthor());
-        product.setReview(productRequest.getReview());
-        product.setPrice(productRequest.getPrice());
-        product.setImages(images.toString());
+               // tính SHA-256
+               String checksum;
+               try {
+                   MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                   byte[] hash = digest.digest(fileBytes);
+                   checksum = Hex.encodeHexString(hash);
+               } catch (NoSuchAlgorithmException e) {
+                   throw new RuntimeException("SHA-256 algorithm not available", e);
+               }
 
-        product = productRepository.save(product);
-        // Lưu ý: productRepository.save() sẽ trả về đối tượng Product đã được lưu vào CSDL, bao gồm cả ID tự động sinh ra.
-        return ProductMapper.mapToDTO(product);
-    }
+               if (!checksum.equalsIgnoreCase(expectedChecksum)) {
+                   throw new RuntimeException("Checksum does not match for file: " + fileName);
+               }
+               fileStorageServices.save(fileName, fileBytes);
+               images.append(fileName).append(",");
+           }
+
+           // xóa dấu phẩy cuối nếu có
+           if (images.length() > 0 && images.charAt(images.length() - 1) == ',') {
+               images.deleteCharAt(images.length() - 1);
+           }
+       }
+
+       Product product = new Product();
+       product.setTitle(productRequest.getTitle());
+       product.setAuthor(productRequest.getAuthor());
+       product.setReview(productRequest.getReview());
+       product.setPrice(productRequest.getPrice());
+       product.setImages(images.toString());
+
+       product = productRepository.save(product);
+       return ProductMapper.mapToDTO(product);
+   }
 
     @Override
     public ProductDTO updateProduct(String id, ProductDTO productDTO) {
