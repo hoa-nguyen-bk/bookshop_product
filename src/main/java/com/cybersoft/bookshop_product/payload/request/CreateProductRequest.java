@@ -13,4 +13,5 @@ public class CreateProductRequest {
     private int review;
     private double price;
     private List<FileRequest> files;
+    private String signature;
 }

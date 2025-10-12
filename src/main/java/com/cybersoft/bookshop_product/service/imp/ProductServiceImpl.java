@@ -9,6 +9,7 @@ import com.cybersoft.bookshop_product.payload.request.SearchProductRequest;
 import com.cybersoft.bookshop_product.repository.ProductRepository;
 import com.cybersoft.bookshop_product.service.FileStorageServices;
 import com.cybersoft.bookshop_product.service.ProductService;
+import com.cybersoft.bookshop_product.utils.SignatureUtils;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import org.apache.commons.codec.binary.Hex;
@@ -20,8 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -29,6 +32,7 @@ import java.util.List;
 
 @Service
 public class ProductServiceImpl implements ProductService {
+
 
     @Autowired
     private FileStorageServices fileStorageServices;
@@ -44,6 +48,21 @@ public class ProductServiceImpl implements ProductService {
    @Transactional
     @Override
    public ProductDTO createProduct(CreateProductRequest productRequest) {
+
+       boolean verify = false;
+//    @LoadThirdParty
+       try {
+           PublicKey publickey = SignatureUtils.loadPublicKeyFromResource("public.pem","SHA256withRSA");
+           String dataVerify = productRequest.getTitle()+"@"+productRequest.getAuthor()+"__"+productRequest.getPrice();
+           verify = SignatureUtils.verifyWithPublicKeyBase64(publickey,dataVerify.getBytes(StandardCharsets.UTF_8),productRequest.getSignature(),"SHA256withRSA");
+           if (!verify) {
+                throw new RuntimeException("Signature verification failed");
+           }
+           System.out.println("--> verify: "+verify);
+       } catch (Exception e) {
+           throw new RuntimeException(e);
+       }
+
        StringBuilder images = new StringBuilder();
        List<FileRequest> files = productRequest.getFiles();
 
