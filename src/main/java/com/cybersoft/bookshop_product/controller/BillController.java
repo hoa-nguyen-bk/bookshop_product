@@ -21,11 +21,12 @@ public class BillController {
     public ResponseEntity<?> bill(@RequestBody String enscyptedData) {
         BillRequest billRequest = new BillRequest();
         try {
-            byte[] data = Base64.getDecoder().decode(enscyptedData);
+//            byte[] data = Base64.getDecoder().decode(enscyptedData);
 
             PrivateKey privatekey = SignatureUtils.loadPrivateKeyFromResource("private_deccript_generate_key.pem", "SHA256withRSA");
-            byte[] descrypted = SignatureUtils.rsaDecryptOaep(privatekey, data);
-            String dataJson = new String(descrypted, StandardCharsets.UTF_8);
+//            byte[] descrypted = SignatureUtils.rsaDecryptOaep(privatekey, data);
+            byte[] dataDecrypt = SignatureUtils.hybridDecrypt(privatekey,enscyptedData,null);
+            String dataJson = new String(dataDecrypt, StandardCharsets.UTF_8);
 
             ObjectMapper objectMapper = new ObjectMapper();
             billRequest = objectMapper.readValue(dataJson, BillRequest.class);
